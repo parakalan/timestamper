@@ -1,192 +1,111 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" data-theme="paper">
 <head>
-    <title>Multi-threaded Work Journal</title>
-    <style>
-        /* All existing styles remain the same */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            padding-bottom: 80px;
-        }
-
-        .thread-container {
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .thread-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .thread-title {
-            font-size: 16px;
-            padding: 4px 8px;
-            border: 1px solid transparent;
-            border-radius: 4px;
-            margin: 0;
-            cursor: text;
-            user-select: all;
-        }
-
-        .thread-title:hover {
-            border-color: #ddd;
-        }
-
-        .thread-title:focus {
-            border-color: #2196f3;
-            outline: none;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn {
-            padding: 4px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: background-color 0.2s;
-        }
-
-        .btn-copy {
-            background-color: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .btn-clear {
-            background-color: #ffebee;
-            color: #d32f2f;
-        }
-
-        .btn:hover {
-            opacity: 0.9;
-        }
-
-        .editor {
-            width: calc(100% - 22px);
-            height: 300px;
-            padding: 10px;
-            border: 1px solid #eee;
-            border-radius: 4px;
-            font-size: 14px;
-            line-height: 1.5;
-            resize: vertical;
-            font-family: inherit;
-            flex-grow: 1;
-            box-sizing: border-box;
-        }
-
-        .editor:focus {
-            outline: none;
-            border-color: #2196f3;
-            box-shadow: 0 0 0 2px rgba(33,150,243,0.1);
-        }
-
-        .active {
-            border-color: #2196f3;
-        }
-
-        .add-thread {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #2196f3;
-            color: white;
-            width: 50px;
-            height: 50px;
-            border-radius: 25px;
-            border: none;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
-        }
-
-        .add-thread:hover {
-            transform: scale(1.1);
-        }
-
-        .master-clear {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background-color: #d32f2f;
-            color: white;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-            z-index: 1000;
-        }
-
-        .master-clear:hover {
-            background-color: #b71c1c;
-        }
-
-        .warning {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #ff9800;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 4px;
-            z-index: 1000;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            display: none;
-            animation: slideDown 0.3s ease-out;
-        }
-
-        @keyframes slideDown {
-            from { transform: translate(-50%, -100%); }
-            to { transform: translate(-50%, 0); }
-        }
-
-        @media (max-width: 768px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Timestamper</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⏱️</text></svg>">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div class="warning" id="warning">Duplicate title detected! Each thread should have a unique name.</div>
-    <button class="master-clear" id="clearAllBtn">Clear All Threads</button>
-    <div class="container">
-        <div class="grid" id="threadsGrid"></div>
+    <canvas id="confetti" aria-hidden="true"></canvas>
+
+    <header class="topbar">
+        <div class="brand">
+            <span class="brand-logo" id="brandLogo" title="Click me">⏱️</span>
+            <div>
+                <h1>Timestamper</h1>
+                <p class="greeting" id="greeting">Every line gets a timestamp.</p>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat" title="Day streak">
+                <span class="stat-icon" id="streakIcon">🔥</span>
+                <span class="stat-value" id="streakValue">0</span>
+                <span class="stat-label">day streak</span>
+            </div>
+            <div class="stat" title="Entries today">
+                <span class="stat-icon">✍️</span>
+                <span class="stat-value" id="todayValue">0</span>
+                <span class="stat-label">today</span>
+            </div>
+            <button class="stat level" id="levelBtn" title="Open stats">
+                <span class="stat-icon">⭐</span>
+                <span class="stat-value">Lv <span id="levelValue">1</span></span>
+                <span class="xp-bar"><span class="xp-fill" id="xpFill"></span></span>
+            </button>
+        </div>
+
+        <div class="toolbar">
+            <div class="clock" id="clock">--:--:--</div>
+            <button class="pomodoro" id="pomodoroBtn" title="Start a 25-minute focus session">🍅 <span id="pomodoroTime">25:00</span></button>
+            <button class="icon-btn" id="themeBtn" title="Change theme (Alt+T)">🎨</button>
+            <button class="icon-btn" id="helpBtn" title="Shortcuts (?)">❔</button>
+        </div>
+    </header>
+
+    <div class="subbar">
+        <div class="search">
+            <span>🔍</span>
+            <input id="searchInput" type="search" placeholder="Search threads… (press /)" autocomplete="off">
+        </div>
+        <div class="subbar-actions">
+            <button class="chip" id="exportBtn" title="Download everything as Markdown">📦 Export all</button>
+            <button class="chip danger" id="clearAllBtn">🧹 Clear all</button>
+        </div>
     </div>
-    <button class="add-thread" title="Add new thread" id="addThreadBtn">+</button>
+
+    <main class="container">
+        <div class="grid" id="threadsGrid"></div>
+        <div class="empty-search" id="emptySearch" hidden>No threads match. Maybe it was a dream? 💭</div>
+    </main>
+
+    <button class="add-thread" title="New thread (Alt+N)" id="addThreadBtn">+</button>
+
+    <div class="toasts" id="toasts" aria-live="polite"></div>
+
+    <!-- Emoji picker -->
+    <div class="popover" id="emojiPicker" hidden></div>
+
+    <!-- Help modal -->
+    <div class="modal-backdrop" id="helpModal" hidden>
+        <div class="modal">
+            <h2>⌨️ Shortcuts & tricks</h2>
+            <ul class="shortcuts">
+                <li><kbd>Enter</kbd> New timestamped entry</li>
+                <li><kbd>Shift</kbd>+<kbd>Enter</kbd> Plain new line (no timestamp)</li>
+                <li><kbd>Alt</kbd>+<kbd>N</kbd> New thread</li>
+                <li><kbd>Alt</kbd>+<kbd>T</kbd> Cycle theme</li>
+                <li><kbd>Alt</kbd>+<kbd>F</kbd> Focus mode on current thread</li>
+                <li><kbd>/</kbd> Search</li>
+                <li><kbd>Esc</kbd> Close things</li>
+                <li><kbd>?</kbd> This help</li>
+            </ul>
+            <h3>🎉 Secret sauce</h3>
+            <ul class="tips">
+                <li>End an entry with <code>#win</code>, <code>✅</code> or <code>done!</code> for confetti.</li>
+                <li>Click a thread's emoji to change it; click the dot to change its color.</li>
+                <li>Drag threads by their emoji to reorder. Pin the important ones 📌.</li>
+                <li>Finish a 🍅 pomodoro and it gets logged in your active thread.</li>
+                <li>Write every day to keep the 🔥 streak alive and level up.</li>
+            </ul>
+            <button class="btn-primary" data-close>Got it!</button>
+        </div>
+    </div>
+
+    <!-- Stats modal -->
+    <div class="modal-backdrop" id="statsModal" hidden>
+        <div class="modal wide">
+            <h2>📈 Your journal</h2>
+            <div class="stat-cards" id="statCards"></div>
+            <h3>Last 20 weeks</h3>
+            <div class="heatmap" id="heatmap"></div>
+            <h3>🏆 Achievements</h3>
+            <div class="badges" id="badges"></div>
+            <button class="btn-primary" data-close>Back to work</button>
+        </div>
+    </div>
 
     <script src="app.js"></script>
 </body>
